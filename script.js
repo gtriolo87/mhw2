@@ -1,13 +1,9 @@
 /* TODO: inserite il codice JavaScript necessario a completare il MHW! */
+
+/* Revisione 1: codice modificato senza l'uso di variabili globali */
+
 const IMG_CHECKED = 'images/checked.png';
 const IMG_UNCHECKED = 'images/unchecked.png';
-
-const arrayChoices1 = [];
-const arrayChoices2 = [];
-const arrayChoices3 = [];
-let selectedChoice1 = null;
-let selectedChoice2 = null;
-let selectedChoice3 = null;
 
 /* gestione pulizia scelta */
 function cleanChoice(element) {
@@ -30,36 +26,30 @@ function cleanChoice(element) {
 /* funzione di restart del quiz */
 function cleanQuiz(event) {
     const resultView = event.currentTarget.parentNode;
-    for (const choice of arrayChoices1) {
-        cleanChoice(choice);
+    const allChoices = document.querySelectorAll('.choice-grid div');
+
+    for (const singleChoice of allChoices) {
+        cleanChoice(singleChoice);
     }
-    for (const choice of arrayChoices2) {
-        cleanChoice(choice);
-    }
-    for (const choice of arrayChoices3) {
-        cleanChoice(choice);
-    }
+
     resultView.classList.add('hidden');
-    selectedChoice1 = null;
-    selectedChoice2 = null;
-    selectedChoice3 = null;
 }
 
 /* Funzione controllo e definizione risultato */
-function checkResult() {
+function checkResult(choiceChecked) {
     const resultTitle = document.querySelector('#result-title');
     const resultContent = document.querySelector('#result-content');
     let winnerChoice;
 
-    if ((selectedChoice1.dataset.choiceId === selectedChoice2.dataset.choiceId) || (selectedChoice1.dataset.choiceId === selectedChoice3.dataset.choiceId)) {
-        console.log('Vittoria 1 con: ' + selectedChoice1.dataset.choiceId);
-        winnerChoice = selectedChoice1;
-    } else if (selectedChoice2.dataset.choiceId === selectedChoice3.dataset.choiceId) {
-        console.log('Vittoria 2 con: ' + selectedChoice2.dataset.choiceId);
-        winnerChoice = selectedChoice2;
+    if ((choiceChecked[0].dataset.choiceId === choiceChecked[1].dataset.choiceId) || (choiceChecked[0].dataset.choiceId === choiceChecked[2].dataset.choiceId)) {
+        console.log('Vittoria 1 con: ' + choiceChecked[0].dataset.choiceId);
+        winnerChoice = choiceChecked[0];
+    } else if (choiceChecked[1].dataset.choiceId === choiceChecked[2].dataset.choiceId) {
+        console.log('Vittoria 2 con: ' + choiceChecked[1].dataset.choiceId);
+        winnerChoice = choiceChecked[1];
     } else {
-        console.log('Vince 1 perchè tutti diversi: ' + selectedChoice1.dataset.choiceId);
-        winnerChoice = selectedChoice1;
+        console.log('Vince 1 perchè tutti diversi: ' + choiceChecked[0].dataset.choiceId);
+        winnerChoice = choiceChecked[0];
     }
     resultTitle.textContent = RESULTS_MAP[winnerChoice.dataset.choiceId].title;
     resultContent.textContent = RESULTS_MAP[winnerChoice.dataset.choiceId].contents;
@@ -68,38 +58,22 @@ function checkResult() {
 /* funzione di gestione click della scelta */
 function checkChoice(event) {
     const choice = event.currentTarget;
-    let choiceArray;
-    switch (choice.dataset.questionId) {
-        case 'one':
-            if (selectedChoice1) {
-                cleanChoice(selectedChoice1);
-            }
-            choiceArray = arrayChoices1;
-            selectedChoice1 = choice;
-            break;
-        case 'two':
-            if (selectedChoice2) {
-                cleanChoice(selectedChoice2);
-            }
-            choiceArray = arrayChoices2;
-            selectedChoice2 = choice;
-            break;
-        case 'three':
-            if (selectedChoice3) {
-                cleanChoice(selectedChoice3);
-            }
-            choiceArray = arrayChoices3;
-            selectedChoice3 = choice;
-            break;
-    }
+    const oldChoice = document.querySelector('.choice-grid div[data-question-id=' + choice.dataset.questionId + '].checked');
 
-    for (const actualChoice of choiceArray) {
-        actualChoice.classList.add('unchecked');
+    if (!oldChoice) {
+        const questionChoices = document.querySelectorAll('.choice-grid div[data-question-id=' + choice.dataset.questionId + ']');
+        for (const otherChoice of questionChoices) {
+            otherChoice.classList.add('unchecked');
+        }
+    } else {
+        cleanChoice(oldChoice);
+        oldChoice.classList.add('unchecked');
     }
 
     choice.classList.add('checked');
     choice.classList.remove('unchecked');
     choice.removeEventListener('click', checkChoice);
+
     for (const child of choice.childNodes) {
         if (child.nodeType === Node.ELEMENT_NODE) {
             if (child.className === 'checkbox') {
@@ -109,19 +83,15 @@ function checkChoice(event) {
     }
 
     //Controllo che se tutte le selezioni sono state fatte rimuovo i click e faccio vedere il risultato
-    if (selectedChoice1 && selectedChoice2 && selectedChoice3) {
-        for (const choice of arrayChoices1) {
-            choice.removeEventListener('click', checkChoice);
-        }
-        for (const choice of arrayChoices2) {
-            choice.removeEventListener('click', checkChoice);
-        }
-        for (const choice of arrayChoices3) {
-            choice.removeEventListener('click', checkChoice);
+    const choiceChecked = document.querySelectorAll('.choice-grid div.checked');
+    if (choiceChecked.length === 3) {
+        const allChoices = document.querySelectorAll('.choice-grid div');
+        for (const singleChoice of allChoices) {
+            singleChoice.removeEventListener('click', checkChoice);
         }
         const resultView = document.querySelector('#result-view');
         resultView.classList.remove('hidden');
-        checkResult();
+        checkResult(choiceChecked);
     }
 }
 
@@ -129,18 +99,6 @@ function checkChoice(event) {
 /* alla prima esecuzione mi mappo degli array con tutti gli id delle possibili risposte per ogni domanda*/
 const choices = document.querySelectorAll('.choice-grid div');
 for (const choice of choices) {
-    //console.log('valore: ' + choice.dataset.choiceId + ' e '+ choice.dataset.questionId)
-    switch (choice.dataset.questionId) {
-        case 'one':
-            arrayChoices1.push(choice);
-            break;
-        case 'two':
-            arrayChoices2.push(choice);
-            break;
-        case 'three':
-            arrayChoices3.push(choice);
-            break;
-    }
     choice.addEventListener('click', checkChoice);
 }
 
